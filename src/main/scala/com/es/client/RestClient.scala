@@ -6,8 +6,9 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.es.config.ActorSystemConfig
+import com.es.config.{ActorSystemConfig, ElasticClientConfig}
 import com.es.models._
+import com.typesafe.config.Config
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,14 +18,15 @@ abstract class RestClient[R <: BaseResult[T, A], T <: BaseEntity[A], A](implicit
 
   def getResponse(user: String): Future[HttpResponse] = {
     //pattern1:
-    //val uri = Uri("https://api.github.com/search/repositories?q=akka+user:" + user)
+    //val uri = Uri("https://" + ElasticClientConfig.config.getString("rest.api.url")
+    //  + Uri(ElasticClientConfig.config.getString("rest.api.uri") + user))
     //val request: HttpRequest = HttpRequest(method = HttpMethods.GET, uri)
-    //val res = Http().singleRequest(request)
+    //val response = Http().singleRequest(request)
 
     //pattern2:
-    val uri = Uri("/search/repositories?q=akka+user:" + user)
+    val uri = Uri(ElasticClientConfig.config.getString("rest.api.uri") + user)
     val request: HttpRequest = HttpRequest(method = HttpMethods.GET, uri)
-    val connectionFlow = Http().outgoingConnectionHttps("api.github.com")
+    val connectionFlow = Http().outgoingConnectionHttps(ElasticClientConfig.config.getString("rest.api.url"))
     val response = Source.single(request).via(connectionFlow).runWith(Sink.head)
 
     response
@@ -34,9 +36,9 @@ abstract class RestClient[R <: BaseResult[T, A], T <: BaseEntity[A], A](implicit
 
 }
 
-class GithubClient(implicit actorSystem: ActorSystem,
-                   materializer: ActorMaterializer,
-                   ec: ExecutionContext) extends RestClient[GitResult, GitRepo, Long] {
+class GithubClient()(implicit actorSystem: ActorSystem,
+                     materializer: ActorMaterializer,
+                     ec: ExecutionContext) extends RestClient[GitResult, GitRepo, Long] {
   override def getResources(user: String): Future[List[GitRepo]] = {
     val response = this.getResponse(user)
     //pattern1:
