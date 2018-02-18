@@ -1,37 +1,39 @@
 package com.es.services
 
+import com.es.config.ActorSystemConfig
 import com.es.models.{BaseEntity, GitRepo}
 import com.es.repositories.GitElasticRepository
-import scala.concurrent.{ExecutionContextExecutor, Future}
 
-abstract class ElasticService[T <: BaseEntity[K], K] {
+import scala.concurrent.Future
 
-  def createIndex(implicit ec: ExecutionContextExecutor): Unit
+trait ElasticService[T <: BaseEntity[A], A] extends ActorSystemConfig {
 
-  def index(entity: T)(implicit ec: ExecutionContextExecutor): Unit
+  def createIndex: Unit
 
-  def indexBulk(entities: List[T])(implicit ec: ExecutionContextExecutor): Unit
+  def index(entity: T): Unit
 
-  def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[T]]
+  def indexBulk(entities: List[T]): Unit
+
+  def find(field: String, q: String): Future[List[T]]
 
 }
 
 
-object GitElasticService extends ElasticService[GitRepo, Long] {
+trait GitElasticService extends ElasticService[GitRepo, Long] {
 
-  override def createIndex(implicit ec: ExecutionContextExecutor) = {
+  override def createIndex = {
     GitElasticRepository.indexing
   }
 
-  override def index(entity: GitRepo)(implicit ec: ExecutionContextExecutor) = {
+  override def index(entity: GitRepo) = {
     GitElasticRepository.indexWithType(entity)
   }
 
-  override def indexBulk(entities: List[GitRepo])(implicit ec: ExecutionContextExecutor) = {
+  override def indexBulk(entities: List[GitRepo]) = {
     GitElasticRepository.indexBulk(entities)
   }
 
-  override def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[GitRepo]] = {
+  override def find(field: String, q: String): Future[List[GitRepo]] = {
     Future(List.empty[GitRepo])
   }
 

@@ -1,7 +1,7 @@
 package com.es.repositories
 
 import com.es.config.ElasticClientConfig
-import com.es.models.{BaseEntity, GitRepo, JsonSupport}
+import com.es.models.{BaseEntity, GitRepo}
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.typesafe.scalalogging.Logger
 

@@ -1,14 +1,14 @@
 package com.es
 
 import akka.http.scaladsl.Http
-import com.es.config.{ActorSystemConfig, ElasticConfig}
+import com.es.services.GitElasticService
 
 import scala.util.Try
 
-object Application extends App with ActorSystemConfig with ElasticConfig {
+object Application extends App with GitElasticService with GithubApiRoute {
   val host = Try(config.getString("service.host")).getOrElse("127.0.0.1")
   val port = Try(config.getInt("service.port")).getOrElse(5000)
 
-  Http().bindAndHandle(ApiRoute.route, host, port)
+  Http().bindAndHandle(route, host, port)
 
 }
