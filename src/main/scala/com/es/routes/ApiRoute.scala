@@ -28,7 +28,6 @@ object GithubApiRoute extends ApiRoute[GitRepo, Long] {
   override def route(implicit system: ActorSystem,
                      ec: ExecutionContextExecutor,
                      materializer: ActorMaterializer): Route = pathPrefix("api") {
-    val service = new GitElasticService()
 
     path("data" / Segment) { user =>
       get {
@@ -37,7 +36,7 @@ object GithubApiRoute extends ApiRoute[GitRepo, Long] {
         val restClient = new GithubClient()
         val items = restClient.getResources(user)
         items.onComplete {
-          case Success(repoes) => service.indexBulk(repoes)
+          case Success(repoes) => GitElasticService.indexBulk(repoes)
           case Failure(f) => logger.info("Error: " + f.getMessage)
         }
         //items.foreach(s => println(s"""map -> ${s}"""))

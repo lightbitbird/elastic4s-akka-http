@@ -18,7 +18,7 @@ trait ElasticService[T <: BaseEntity[A], A] {
 }
 
 
-class GitElasticService extends ElasticService[GitRepo, Long] {
+object GitElasticService extends ElasticService[GitRepo, Long] {
 
   override def createIndex(implicit ec: ExecutionContextExecutor) = {
     GitElasticRepository.indexing
