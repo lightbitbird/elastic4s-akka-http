@@ -21,7 +21,7 @@ class HttpServer(implicit system: ActorSystem,
   }
 
   def route: Route = {
-    GithubApiRoute.gitRoute
+    GithubApiRoute.route
   }
 
 }

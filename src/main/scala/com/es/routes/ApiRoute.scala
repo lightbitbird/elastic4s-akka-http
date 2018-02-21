@@ -16,18 +16,18 @@ trait ApiRoute[T <: BaseEntity[A], A] extends Directives with JsonSupport {
 
   val logger = Logger(getClass.getName)
 
-  def gitRoute(implicit system: ActorSystem,
-               ec: ExecutionContextExecutor,
-               materializer: ActorMaterializer): Route
+  def route(implicit system: ActorSystem,
+            ec: ExecutionContextExecutor,
+            materializer: ActorMaterializer): Route
 
 }
 
 
 object GithubApiRoute extends ApiRoute[GitRepo, Long] {
 
-  override def gitRoute(implicit system: ActorSystem,
-                        ec: ExecutionContextExecutor,
-                        materializer: ActorMaterializer): Route = pathPrefix("api") {
+  override def route(implicit system: ActorSystem,
+                     ec: ExecutionContextExecutor,
+                     materializer: ActorMaterializer): Route = pathPrefix("api") {
     val service = new GitElasticService()
 
     path("data" / Segment) { user =>
