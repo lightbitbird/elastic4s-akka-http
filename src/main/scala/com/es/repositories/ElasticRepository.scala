@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.Logger
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.Source
 
-abstract class ElasticRepository[T <: BaseEntity[A], A] {
+trait ElasticRepository[T <: BaseEntity[A], A] {
   val logger = Logger(getClass.getName)
 
   val client = ElasticClientConfig.client

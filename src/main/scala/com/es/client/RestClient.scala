@@ -6,9 +6,8 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.es.config.{ActorSystemConfig, ElasticClientConfig}
+import com.es.config.ElasticClientConfig
 import com.es.models._
-import com.typesafe.config.Config
 
 import scala.concurrent.{ExecutionContext, Future}
 
