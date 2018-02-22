@@ -35,8 +35,8 @@ trait ElasticRepository[T <: BaseEntity[A], A] {
 
 object GitElasticRepository extends ElasticRepository[GitRepo, Long] {
 
-  override lazy val indexName = config.getString("elastic.index.name")
-  override lazy val typeName = config.getString("elastic.type.name")
+  override val indexName = config.getString("elastic.index.name")
+  override val typeName = config.getString("elastic.type.name")
 
   import com.sksamuel.elastic4s.jackson.ElasticJackson.Implicits._
 

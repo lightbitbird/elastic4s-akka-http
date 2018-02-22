@@ -9,7 +9,7 @@ trait Configuration {
 
 trait ElasticConfig {
 
-  private val innerConfig: Config = {
+  private def innerConfig: Config = {
     val env = System.getProperty("DEVELOP", "elastic")
     val default = ConfigFactory.load()
 
@@ -20,5 +20,5 @@ trait ElasticConfig {
 
   }
 
-  def config: Config = innerConfig
+  val config: Config = innerConfig
 }
