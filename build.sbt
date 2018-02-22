@@ -21,12 +21,11 @@ libraryDependencies ++= {
     "com.typesafe.akka"           %% "akka-http"            % akkaHttp,
 
     "org.scalatest"               %% "scalatest"            % scalaTest % "test",
-    "com.typesafe.scala-logging"  %% "scala-logging"        % "3.5.0",
     "com.typesafe.akka"           %% "akka-http-spray-json" % "10.0.11",
     "com.sksamuel.elastic4s"      %% "elastic4s-jackson"      % elastic4sVersion,
     "org.json4s"                  %% "json4s-native"        % "3.5.3",
 
-    "ch.qos.logback"              % "logback-classic"       % "1.2.3",
+    "com.typesafe.scala-logging"  %% "scala-logging"        % "3.5.0",
     "com.typesafe.akka"           %% "akka-slf4j"           % "2.4.13",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.25",
 
