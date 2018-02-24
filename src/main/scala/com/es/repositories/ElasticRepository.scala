@@ -63,7 +63,7 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
     })
   }
 
-  def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[GitRepo] = {
+  def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[GitRepo]] = {
 
     implicit val owFormat = jsonFormat3(Owner.apply)
     implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
