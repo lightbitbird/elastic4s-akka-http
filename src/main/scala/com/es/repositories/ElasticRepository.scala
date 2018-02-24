@@ -1,12 +1,16 @@
 package com.es.repositories
 
+import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.ActorMaterializer
 import com.es.config.ElasticClientConfig
-import com.es.models.{BaseEntity, GitRepo}
+import com.es.models._
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.typesafe.scalalogging.Logger
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.Source
+import scala.util.{Failure, Success}
 
 trait ElasticRepository[T <: BaseEntity[A], A] {
   val logger = Logger(getClass.getName)
@@ -28,12 +32,14 @@ trait ElasticRepository[T <: BaseEntity[A], A] {
 
   def indexBulk(entities: List[T])(implicit ec: ExecutionContextExecutor): Unit
 
+  def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[T]]
+
   def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[T]]
 
 }
 
 
-object GitElasticRepository extends ElasticRepository[GitRepo, Long] {
+object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSupport {
 
   override val indexName = config.getString("elastic.index.name")
   override val typeName = config.getString("elastic.type.name")
@@ -55,6 +61,27 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] {
     }.recover({
       case e: Exception => logger.error("error in indexBulk: " + e.getMessage)
     })
+  }
+
+  def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[GitRepo] = {
+
+    implicit val owFormat = jsonFormat3(Owner.apply)
+    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
+
+    client.execute {
+      val searchDefinition = searchWithType(indexName / typeName)
+      val builder = searchDefinition matchAllQuery()
+      builder
+    }.flatMap(res => {
+      val entities = res.hits.map(hit => {
+        val entity = HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)
+        Unmarshal(entity).to[GitRepo]
+      })
+      Future.sequence(entities.toList)
+
+    }).recover {
+      case e: Exception => logger.error(s"""Error: ${e.getMessage}"""); List.empty[GitRepo]
+    }
   }
 
   def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[GitRepo]] = {

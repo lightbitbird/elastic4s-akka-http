@@ -42,7 +42,31 @@ object GithubApiRoute extends ApiRoute[GitRepo, Long] {
         //items.foreach(s => println(s"""map -> ${s}"""))
         complete(ToResponseMarshallable(items))
       }
+
+    } ~ path("search") {
+      get {
+        parameters('user.as[String], 'category.as[String]) { (user, category) =>
+          val ret = GitElasticService.findAll()
+          onSuccess(ret) {
+            s => complete(ToResponseMarshallable(s))
+          }
+        } ~ parameters('user) { user =>
+          if (user == "all") {
+            val ret = GitElasticService.findAll()
+            onSuccess(ret) {
+              s => complete(ToResponseMarshallable(s))
+            }
+          } else {
+            val ret = GitElasticService.find(user, "")
+            onSuccess(ret) {
+              s => complete(ToResponseMarshallable(s))
+            }
+          }
+        }
+
+      }
     }
   }
 
 }
+
