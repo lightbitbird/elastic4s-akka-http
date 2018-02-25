@@ -7,6 +7,7 @@ import akka.stream.ActorMaterializer
 import com.es.client.GithubClient
 import com.es.models.{BaseEntity, GitRepo, JsonSupport}
 import com.es.services.GitElasticService
+import com.sksamuel.elastic4s.bulk.RichBulkResponse
 import com.typesafe.scalalogging.Logger
 
 import scala.concurrent.ExecutionContextExecutor
@@ -19,7 +20,6 @@ trait ApiRoute[T <: BaseEntity[A], A] extends Directives with JsonSupport {
   def route(implicit system: ActorSystem,
             ec: ExecutionContextExecutor,
             materializer: ActorMaterializer): Route
-
 }
 
 
@@ -35,12 +35,23 @@ object GithubApiRoute extends ApiRoute[GitRepo, Long] {
 
         val restClient = new GithubClient()
         val items = restClient.getResources(user)
-        items.onComplete {
-          case Success(repoes) => GitElasticService.indexBulk(repoes)
-          case Failure(f) => logger.info("Error: " + f.getMessage)
+        completeOrRecoverWith(items) {
+          case e: Exception =>
+            logger.error("Failed to get Git resources: " + e.getMessage)
+            complete(ToResponseMarshallable(List.empty[GitRepo]))
+        } ~ onComplete(items) {
+          case Success(repoes) =>
+            val bulk = GitElasticService.indexBulk(repoes)
+            onSuccess(bulk) {
+              case s: RichBulkResponse => complete(ToResponseMarshallable(items))
+              case e: Exception =>
+                logger.error("Error: " + e.getMessage)
+                complete(ToResponseMarshallable(List.empty[GitRepo]))
+            }
+          case Failure(f) =>
+            logger.error("Error: " + f.getMessage)
+            complete(ToResponseMarshallable(List.empty[GitRepo]))
         }
-        //items.foreach(s => println(s"""map -> ${s}"""))
-        complete(ToResponseMarshallable(items))
       }
 
     } ~ path("search") {
@@ -49,17 +60,32 @@ object GithubApiRoute extends ApiRoute[GitRepo, Long] {
           val ret = GitElasticService.findAll()
           onSuccess(ret) {
             s => complete(ToResponseMarshallable(s))
+
+          } ~ completeOrRecoverWith(ret) {
+            case e =>
+              logger.error("Error: " + e.getMessage)
+              complete(ToResponseMarshallable(List.empty[GitRepo]))
           }
         } ~ parameters('user) { user =>
           if (user == "all") {
             val ret = GitElasticService.findAll()
             onSuccess(ret) {
               s => complete(ToResponseMarshallable(s))
+
+            } ~ completeOrRecoverWith(ret) {
+              case e =>
+                logger.error("Error: " + e.getMessage)
+                complete(ToResponseMarshallable(List.empty[GitRepo]))
             }
           } else {
             val ret = GitElasticService.find(user, "")
             onSuccess(ret) {
               s => complete(ToResponseMarshallable(s))
+
+            } ~ completeOrRecoverWith(ret) {
+              case e =>
+                logger.error("Error: " + e.getMessage)
+                complete(ToResponseMarshallable(List.empty[GitRepo]))
             }
           }
         }

@@ -3,6 +3,7 @@ package com.es.services
 import akka.stream.ActorMaterializer
 import com.es.models.{BaseEntity, GitRepo}
 import com.es.repositories.GitElasticRepository
+import com.sksamuel.elastic4s.bulk.RichBulkResponse
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -12,9 +13,9 @@ trait ElasticService[T <: BaseEntity[A], A] {
 
   def index(entity: T)(implicit ec: ExecutionContextExecutor): Unit
 
-  def indexBulk(entities: List[T])(implicit ec: ExecutionContextExecutor): Unit
+  def indexBulk(entities: List[T])(implicit ec: ExecutionContextExecutor): Future[RichBulkResponse]
 
-  def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[T]]
+  def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[GitRepo]]
 
   def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[T]]
 
@@ -31,11 +32,12 @@ object GitElasticService extends ElasticService[GitRepo, Long] {
     GitElasticRepository.indexWithType(entity)
   }
 
-  override def indexBulk(entities: List[GitRepo])(implicit ec: ExecutionContextExecutor) = {
+  override def indexBulk(entities: List[GitRepo])(implicit ec: ExecutionContextExecutor): Future[RichBulkResponse] = {
     GitElasticRepository.indexBulk(entities)
   }
 
-  override def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[GitRepo]] = {
+  override def findAll()(implicit ec: ExecutionContextExecutor,
+                         mate: ActorMaterializer): Future[List[GitRepo]] = {
     GitElasticRepository.findAll()
   }
 
