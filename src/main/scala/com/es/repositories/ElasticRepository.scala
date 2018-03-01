@@ -63,8 +63,8 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
     val bulkIndex = entities.map(entity => indexInto(indexName / typeName) id entity.id.toString doc entity)
     client.execute {
       bulk(bulkIndex)
-//    }.map(res => Right(res)).recover{
-//      case e: Exception => Left(e)
+//    }.recover{
+//      case e: Exception => e
     }
   }
 
