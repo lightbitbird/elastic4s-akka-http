@@ -1,16 +1,16 @@
 package com.es.routes
 
 import akka.actor.ActorSystem
-import akka.http.javadsl.server.{MethodRejection, RejectionHandler}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import akka.stream.ActorMaterializer
 import com.es.config.ElasticConfig
 import com.es.models.{ErrorResponse, JsonSupport}
 import com.typesafe.scalalogging.Logger
 import org.elasticsearch.transport.RemoteTransportException
+import spray.json._
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.Try
@@ -27,13 +27,13 @@ class HttpServer(implicit system: ActorSystem,
     ExceptionHandler {
       case remote: RemoteTransportException =>
         val errorResponse = ErrorResponse(BadRequest.intValue, "IndexNotFoundException", "Bad request: no such index")
-        complete(BadRequest, errorResponse)
+        complete(BadRequest, HttpEntity(ContentTypes.`application/json`, errorResponse.toJson.toString))
 
       case e: Throwable =>
         extractUri { uri =>
           logger.error(s"""${e}""")
           val errorResponse = ErrorResponse(InternalServerError.intValue, "Internal Server Error", "Internal Server Error occured!!")
-          complete(InternalServerError, errorResponse)
+          complete(InternalServerError, HttpEntity(ContentTypes.`application/json`, errorResponse.toJson.toString))
         }
     }
 

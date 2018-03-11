@@ -2,16 +2,14 @@ package com.es.routes
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import com.es.client.GithubClient
 import com.es.models.{BaseEntity, GitRepo, JsonSupport}
 import com.es.services.GitElasticService
-import com.sksamuel.elastic4s.bulk.RichBulkResponse
 import com.typesafe.scalalogging.Logger
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
 
 trait ApiRoute[T <: BaseEntity[A], A] extends Directives with JsonSupport {
