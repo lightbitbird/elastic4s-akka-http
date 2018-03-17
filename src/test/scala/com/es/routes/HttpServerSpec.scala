@@ -14,11 +14,11 @@ class HttpServerSpec extends BaseServiceTest {
           //  Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypes.`application/json`).map { str =>
           //}
 
-          val list = List(GitRepo(121942118, "elastic4s-akka-http", Owner(14951865, "lightbitbird", "https://api.github.com/users/lightbitbird"), "https://api.github.com/repos/lightbitbird/elastic4s-akka-http", "Scala"),
-            GitRepo(114505945, "reactive-kafka-app", Owner(14951865, "lightbitbird", "https://api.github.com/users/lightbitbird"), "https://api.github.com/repos/lightbitbird/reactive-kafka-app", "Scala"),
-            GitRepo(108731072, "reactive-twitter-stream-withslick", Owner(14951865, "lightbitbird", "https://api.github.com/users/lightbitbird"), "https://api.github.com/repos/lightbitbird/reactive-twitter-stream-withslick", "Scala"))
+          //val list = List(GitRepo(121942118, "elastic4s-akka-http", Owner(14951865, "lightbitbird", "https://api.github.com/users/lightbitbird"), "https://api.github.com/repos/lightbitbird/elastic4s-akka-http", "Scala"),
+          //  GitRepo(114505945, "reactive-kafka-app", Owner(14951865, "lightbitbird", "https://api.github.com/users/lightbitbird"), "https://api.github.com/repos/lightbitbird/reactive-kafka-app", "Scala"),
+          //  GitRepo(108731072, "reactive-twitter-stream-withslick", Owner(14951865, "lightbitbird", "https://api.github.com/users/lightbitbird"), "https://api.github.com/repos/lightbitbird/reactive-twitter-stream-withslick", "Scala"))
 
-          responseAs[List[GitRepo]] shouldBe list
+          //responseAs[List[GitRepo]] shouldBe list
           status.intValue() shouldBe 200
         }
       }
