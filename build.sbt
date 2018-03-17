@@ -20,14 +20,16 @@ libraryDependencies ++= {
     "com.typesafe.akka"           %% "akka-http-core"       % akkaHttp,
     "com.typesafe.akka"           %% "akka-http"            % akkaHttp,
 
-    "org.scalatest"               %% "scalatest"            % scalaTest % "test",
     "com.typesafe.akka"           %% "akka-http-spray-json" % "10.0.11",
     "com.sksamuel.elastic4s"      %% "elastic4s-jackson"      % elastic4sVersion,
     "org.json4s"                  %% "json4s-native"        % "3.5.3",
+    "com.typesafe.akka"           %% "akka-http-testkit"    % akkaHttp,
 
     "com.typesafe.scala-logging"  %% "scala-logging"        % "3.5.0",
     "com.typesafe.akka"           %% "akka-slf4j"           % "2.4.13",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.25",
+    "org.scalatest"               %% "scalatest"            % scalaTest % "test",
+    "org.mockito" % "mockito-all" % "1.9.5" % Test,
 
     "com.sksamuel.elastic4s"      %% "elastic4s-core"       % elastic4sVersion,
     "com.sksamuel.elastic4s"      %% "elastic4s-tcp"        % elastic4sVersion,
