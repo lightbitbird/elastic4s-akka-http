@@ -8,7 +8,7 @@ import scala.util.Try
 object ElasticClientConfig extends ElasticConfig {
   private val host = Try(config.getString("elastic.host")).getOrElse("localhost")
   private val port = Try(config.getInt("elastic.port")).getOrElse(9300)
-  private val cluster = Try(config.getString("elastic.cluster")).getOrElse("elastic-dev")
+  private val cluster = Try(config.getString("elastic.cluster")).getOrElse("docker-cluster")
 
   private val settings = Settings.builder().put("cluster.name", cluster).build()
   val client = TcpClient.transport(settings, ElasticsearchClientUri(host, port))

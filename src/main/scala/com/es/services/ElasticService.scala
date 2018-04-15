@@ -17,8 +17,14 @@ trait ElasticService[T <: BaseEntity[A], A] {
 
   def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[GitRepo]]
 
-  def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[T]]
+  def findSingle(field: String, value: Any)(implicit ec: ExecutionContextExecutor,
+                                            mate: ActorMaterializer): Future[List[GitRepo]]
 
+  def find(fields: (String, Any)*)(implicit ec: ExecutionContextExecutor,
+                                   mate: ActorMaterializer): Future[List[T]]
+
+  def findWithQuery(field: String, q: String)(implicit ec: ExecutionContextExecutor,
+                                              mate: ActorMaterializer): Future[List[T]]
 }
 
 
@@ -41,8 +47,18 @@ object GitElasticService extends ElasticService[GitRepo, Long] {
     GitElasticRepository.findAll()
   }
 
-  override def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[GitRepo]] = {
-    Future(List.empty[GitRepo])
+  override def findSingle(field: String, value: Any)(implicit ec: ExecutionContextExecutor,
+                                                     mate: ActorMaterializer): Future[List[GitRepo]] = {
+    GitElasticRepository.findSingle(field, value)
   }
 
+  override def find(fields: (String, Any)*)(implicit ec: ExecutionContextExecutor,
+                                            mate: ActorMaterializer): Future[List[GitRepo]] = {
+    GitElasticRepository.findOr(fields: _*)
+  }
+
+  override def findWithQuery(field: String, q: String)(implicit ec: ExecutionContextExecutor,
+                                                       mate: ActorMaterializer): Future[List[GitRepo]] = {
+    GitElasticRepository.find(("", ""))
+  }
 }

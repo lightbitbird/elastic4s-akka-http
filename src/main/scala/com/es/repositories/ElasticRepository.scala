@@ -35,8 +35,14 @@ trait ElasticRepository[T <: BaseEntity[A], A] {
 
   def findAll()(implicit ec: ExecutionContextExecutor, mate: ActorMaterializer): Future[List[T]]
 
-  def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[T]]
+  def find(wheres: (String, Any)*)(implicit ec: ExecutionContextExecutor,
+                                   mate: ActorMaterializer): Future[List[T]]
 
+  def findSingle(field: String, value: Any)(implicit ec: ExecutionContextExecutor,
+                                            mate: ActorMaterializer): Future[List[T]]
+
+  def findOr(wheres: (String, Any)*)(implicit ec: ExecutionContextExecutor,
+                                   mate: ActorMaterializer): Future[List[T]]
 }
 
 
@@ -63,8 +69,8 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
     val bulkIndex = entities.map(entity => indexInto(indexName / typeName) id entity.id.toString doc entity)
     client.execute {
       bulk(bulkIndex)
-//    }.recover{
-//      case e: Exception => e
+      //    }.recover{
+      //      case e: Exception => e
     }
   }
 
@@ -73,7 +79,6 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
 
     implicit val owFormat = jsonFormat3(Owner.apply)
     implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
-
     client.execute {
       val searchDefinition = searchWithType(indexName / typeName)
       val builder = searchDefinition matchAllQuery()
@@ -87,8 +92,66 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
     })
   }
 
-  def find(field: String, q: String)(implicit ec: ExecutionContextExecutor): Future[List[GitRepo]] = {
-    Future(List.empty[GitRepo])
+  def find(wheres: (String, Any)*)(implicit ec: ExecutionContextExecutor,
+                                   mate: ActorMaterializer): Future[List[GitRepo]] = {
+    implicit val owFormat = jsonFormat3(Owner.apply)
+    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
+    client.execute {
+      val bQuery = boolQuery().should {
+        for {
+          (f, v) <- wheres
+        } yield matchPhraseQuery(fieldName(f), v)
+      }
+      search(indexName / typeName) query (bQuery)
+    }.flatMap(res => {
+      val entities = res.hits.map(hit => {
+        //Unmarshal to an entity after convert to Json format as string
+        Unmarshal(HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)).to[GitRepo]
+      })
+      Future.sequence(entities.toList)
+    })
+  }
+
+  def findSingle(field: String, value: Any)(implicit ec: ExecutionContextExecutor,
+                                            mate: ActorMaterializer): Future[List[GitRepo]] = {
+    implicit val owFormat = jsonFormat3(Owner.apply)
+    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
+    client.execute {
+      val searchDefinition = searchWithType(indexName / typeName)
+      searchDefinition matchQuery("name", "play-zipkin-tracing")
+    }.flatMap(res => {
+      val entities = res.hits.map(hit => {
+        //Unmarshal to an entity after convert to Json format as string
+        Unmarshal(HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)).to[GitRepo]
+      })
+      Future.sequence(entities.toList)
+    })
+  }
+
+  def findOr(wheres: (String, Any)*)(implicit ec: ExecutionContextExecutor,
+                                   mate: ActorMaterializer): Future[List[GitRepo]] = {
+    implicit val owFormat = jsonFormat3(Owner.apply)
+    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
+    client.execute {
+      val bQuery = boolQuery().should {
+        for {
+          (f, v) <- wheres
+        } yield matchPhraseQuery(fieldName(f), v)
+      }
+      search(indexName / typeName) query (bQuery)
+    }.flatMap(res => {
+      val entities = res.hits.map(hit => {
+        //Unmarshal to an entity after convert to Json format as string
+        Unmarshal(HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)).to[GitRepo]
+      })
+      Future.sequence(entities.toList)
+    })
+  }
+
+  def fieldName(name: String) = {
+    if (name == "user") "owner.login"
+    else if (name == "title") "name"
+    else name
   }
 
 }

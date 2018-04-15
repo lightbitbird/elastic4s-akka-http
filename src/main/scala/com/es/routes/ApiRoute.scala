@@ -49,12 +49,12 @@ object GithubApiRoute extends ApiRoute[GitRepo, Long] {
 
     } ~ path("search") {
       get {
-        parameters('user.as[String], 'category.as[String]) { (user, category) =>
-          val ret = GitElasticService.findAll()
+        parameters('user.as[String], 'title.as[String]) { (user, title) =>
+          val ret = GitElasticService.find(("user", user), ("title", title))
           onComplete(ret) {
-            case Success(s) => logger.info(s"""Success with category: ${s}""")
+            case Success(s) => logger.info(s"""Success searching with user=${user} & title=${title}: ${s}""")
               complete(ToResponseMarshallable(s))
-            case Failure(f) => logger.error(s"""Failed ${user}, ${category}: ${f}""")
+            case Failure(f) => logger.error(s"""Failed ${user}${user} & title=${title}: ${f}""")
               complete(ToResponseMarshallable(f))
           }
         } ~ parameters('user) { user =>
@@ -67,11 +67,11 @@ object GithubApiRoute extends ApiRoute[GitRepo, Long] {
                 complete(ToResponseMarshallable(f))
             }
           } else {
-            val ret = GitElasticService.find(user, "")
+            val ret = GitElasticService.find(("user", user))
             onComplete(ret) {
-              case Success(s) => logger.info(s"""Success type: ${s}""")
+              case Success(s) => logger.info(s"""Success searching with user=${user}: ${s}""")
                 complete(ToResponseMarshallable(s))
-              case Failure(f) => logger.error(s"""Failed type: ${f}""")
+              case Failure(f) => logger.error(s"""Failed user=${user}: ${f}""")
                 complete(ToResponseMarshallable(List.empty[GitRepo]))
             }
           }
