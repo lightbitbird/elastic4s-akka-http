@@ -7,11 +7,11 @@ import com.es.config.ElasticClientConfig
 import com.es.models._
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.bulk.RichBulkResponse
+import com.sksamuel.elastic4s.searches.RichSearchResponse
 import com.typesafe.scalalogging.Logger
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.Source
-import scala.util.{Failure, Success}
 
 trait ElasticRepository[T <: BaseEntity[A], A] {
   val logger = Logger(getClass.getName)
@@ -42,7 +42,11 @@ trait ElasticRepository[T <: BaseEntity[A], A] {
                                             mate: ActorMaterializer): Future[List[T]]
 
   def findOr(wheres: (String, Any)*)(implicit ec: ExecutionContextExecutor,
-                                   mate: ActorMaterializer): Future[List[T]]
+                                     mate: ActorMaterializer): Future[List[T]]
+
+  protected def toEntity(response: RichSearchResponse)
+                        (implicit ec: ExecutionContextExecutor,
+                         mate: ActorMaterializer): Future[List[T]]
 }
 
 
@@ -83,55 +87,28 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
       val searchDefinition = searchWithType(indexName / typeName)
       val builder = searchDefinition matchAllQuery()
       builder
-    }.flatMap(res => {
-      val entities = res.hits.map(hit => {
-        val entity = HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)
-        Unmarshal(entity).to[GitRepo]
-      })
-      Future.sequence(entities.toList)
-    })
+    }.flatMap(toEntity)
   }
 
   def find(wheres: (String, Any)*)(implicit ec: ExecutionContextExecutor,
                                    mate: ActorMaterializer): Future[List[GitRepo]] = {
-    implicit val owFormat = jsonFormat3(Owner.apply)
-    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
-    client.execute {
-      val bQuery = boolQuery().should {
-        for {
-          (f, v) <- wheres
-        } yield matchPhraseQuery(fieldName(f), v)
-      }
-      search(indexName / typeName) query (bQuery)
-    }.flatMap(res => {
-      val entities = res.hits.map(hit => {
-        //Unmarshal to an entity after convert to Json format as string
-        Unmarshal(HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)).to[GitRepo]
-      })
-      Future.sequence(entities.toList)
-    })
+    execute(wheres: _*).flatMap(toEntity)
   }
 
   def findSingle(field: String, value: Any)(implicit ec: ExecutionContextExecutor,
                                             mate: ActorMaterializer): Future[List[GitRepo]] = {
-    implicit val owFormat = jsonFormat3(Owner.apply)
-    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
     client.execute {
       val searchDefinition = searchWithType(indexName / typeName)
-      searchDefinition matchQuery("name", "play-zipkin-tracing")
-    }.flatMap(res => {
-      val entities = res.hits.map(hit => {
-        //Unmarshal to an entity after convert to Json format as string
-        Unmarshal(HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)).to[GitRepo]
-      })
-      Future.sequence(entities.toList)
-    })
+      searchDefinition matchQuery(fieldName(field), value)
+    }.flatMap(toEntity)
   }
 
   def findOr(wheres: (String, Any)*)(implicit ec: ExecutionContextExecutor,
-                                   mate: ActorMaterializer): Future[List[GitRepo]] = {
-    implicit val owFormat = jsonFormat3(Owner.apply)
-    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
+                                     mate: ActorMaterializer): Future[List[GitRepo]] = {
+    execute(wheres: _*).flatMap(toEntity)
+  }
+
+  private def execute(wheres: (String, Any)*): Future[RichSearchResponse] = {
     client.execute {
       val bQuery = boolQuery().should {
         for {
@@ -139,13 +116,19 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
         } yield matchPhraseQuery(fieldName(f), v)
       }
       search(indexName / typeName) query (bQuery)
-    }.flatMap(res => {
-      val entities = res.hits.map(hit => {
-        //Unmarshal to an entity after convert to Json format as string
-        Unmarshal(HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)).to[GitRepo]
-      })
-      Future.sequence(entities.toList)
+    }
+  }
+
+  protected override def toEntity(response: RichSearchResponse)
+                                 (implicit ec: ExecutionContextExecutor,
+                                  mate: ActorMaterializer): Future[List[GitRepo]] = {
+    implicit val owFormat = jsonFormat3(Owner.apply)
+    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
+    val entities = response.hits.map(hit => {
+      val entity = HttpEntity(MediaTypes.`application/json`, hit.sourceAsString)
+      Unmarshal(entity).to[GitRepo]
     })
+    Future.sequence(entities.toList)
   }
 
   def fieldName(name: String) = {
