@@ -67,9 +67,6 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
 
   override def indexBulk(entities: List[GitRepo])
                         (implicit ec: ExecutionContextExecutor): Future[RichBulkResponse] = {
-    implicit val owFormat = jsonFormat3(Owner.apply)
-    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
-
     val bulkIndex = entities.map(entity => indexInto(indexName / typeName) id entity.id.toString doc entity)
     client.execute {
       bulk(bulkIndex)
@@ -80,9 +77,6 @@ object GitElasticRepository extends ElasticRepository[GitRepo, Long] with JsonSu
 
   def findAll()(implicit ec: ExecutionContextExecutor,
                 mate: ActorMaterializer): Future[List[GitRepo]] = {
-
-    implicit val owFormat = jsonFormat3(Owner.apply)
-    implicit val gitRepoFormat = jsonFormat5(GitRepo.apply)
     client.execute {
       val searchDefinition = searchWithType(indexName / typeName)
       val builder = searchDefinition matchAllQuery()
